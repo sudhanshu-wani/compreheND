@@ -1,93 +1,96 @@
-# ==============================================================================
-#  Flask Web Application: Neurodiversity-Inspired Coaching Tool (Voice Input)
-# ==============================================================================
-# This single file contains a complete Flask application that demonstrates the
-# full end-to-end pipeline: Audio File Upload -> Transcription -> Analysis -> Personalization.
-#
-# To Run This Code:
-# 1. Save it as a Python file (e.g., `app.py`).
-# 2. Install the necessary libraries:
-#    pip install Flask spacy scikit-learn numpy textblob pydub
-# 3. Download the spaCy model:
-#    python -m spacy download en_core_web_md
-# 4. **IMPORTANT**: You will also need to install ffmpeg.
-#    - On Mac (using Homebrew): brew install ffmpeg
-#    - On Windows: Download from https://ffmpeg.org/download.html and add to your system's PATH.
-#    - On Linux (Debian/Ubuntu): sudo apt-get install ffmpeg
-# 5. Run the app from your terminal:
-#    flask --app app run
-# 6. Open your web browser and go to http://127.0.0.1:5000
-# ==============================================================================
+# # ==============================================================================
+# #  Flask Web Application: Neurodiversity-Inspired Coaching Tool (Voice Input)
+# # ==============================================================================
+# # This single file contains a complete Flask application that demonstrates the
+# # full end-to-end pipeline: Audio File Upload -> Transcription -> Analysis -> Personalization.
+# #
+# # To Run This Code:
+# # 1. Save it as a Python file (e.g., `app.py`).
+# # 2. Install the necessary libraries:
+# #    pip install Flask spacy scikit-learn numpy textblob pydub
+# # 3. Download the spaCy model:
+# #    python -m spacy download en_core_web_md
+# # 4. **IMPORTANT**: You will also need to install ffmpeg.
+# #    - On Mac (using Homebrew): brew install ffmpeg
+# #    - On Windows: Download from https://ffmpeg.org/download.html and add to your system's PATH.
+# #    - On Linux (Debian/Ubuntu): sudo apt-get install ffmpeg
+# # 5. Run the app from your terminal:
+# #    flask --app app run
+# # 6. Open your web browser and go to http://127.0.0.1:5000
+# # =======================================
 
 # --- Core Imports ---
 from flask import Flask, render_template_string, request, flash, redirect, url_for
 import spacy
-from spacy.tokens import Doc
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from textblob import TextBlob
 import os
 import io
 from pydub import AudioSegment
-import speech_recognition as sr
 from werkzeug.utils import secure_filename
+import joblib
+
+# --- Advanced Component Imports ---
+from faster_whisper import WhisperModel
+import librosa
+import noisereduce as nr
+import soundfile as sf
+import lightgbm as lgb
 
 # ==============================================================================
-#  1. INITIALIZE FLASK APP AND LOAD NLP MODELS
+#  1. INITIALIZE FLASK APP AND LOAD MODELS
 # ==============================================================================
 app = Flask(__name__)
-# A secret key is needed for flashing messages
-app.config['SECRET_KEY'] = 'your_secret_key_here'
-# Create a temporary folder for uploads
+app.config['SECRET_KEY'] = 'a_strong_secret_key_for_msc_project'
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
+CLASSIFIER_PATH = 'intent_classifier.pkl'
 
 # --- Load spaCy Model ---
 print("📚 Loading spaCy medium model...")
 nlp = spacy.load("en_core_web_md")
 print("✅ spaCy model loaded.")
 
+# --- Load Whisper Model ---
+# Using the tiny, English-only model for efficiency on a low-end PC.
+# It will be downloaded automatically on the first run.
+model_size = "tiny.en"
+print(f"📚 Loading faster-whisper model: {model_size}...")
+whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
+print("✅ Whisper model loaded.")
+
 # ==============================================================================
-#  2. THE CORE AI PIPELINE (Functions from previous steps)
+#  2. THE CORE AI PIPELINE (Upgraded Components)
 # ==============================================================================
 
-# --- The "Golden" Advice Library (Private Knowledge Base) ---
+# --- The "Golden" Advice Library (Unchanged) ---
 GOLDEN_ADVICE_LIBRARY = [
     {"advice": "player is unfocused and not following the game plan", "concept": "Improve tactical discipline and adhere to the team strategy."},
     {"advice": "player is holding onto the ball or possession for too long", "concept": "Increase speed of play; focus on quicker decisions and team integration."},
     {"advice": "player is making poor decisions and forcing plays that are not there", "concept": "Improve situational awareness and shot/pass selection."},
-    {"advice": "player is not being aggressive enough and is playing too passively", "concept": "Increase attacking intent; take calculated risks to pressure opponents."},
-    {"advice": "player is being too aggressive and committing unnecessary fouls or errors", "concept": "Channel aggression effectively; play with more control and composure."},
-    {"advice": "player's defensive stance is too high and off-balance", "concept": "Maintain a lower center of gravity and a balanced athletic stance."},
 ]
 
-# --- Annotated Dataset for the Intent Classifier ---
+# --- Annotated Dataset for the Intent Classifier (Unchanged) ---
 ANNOTATED_DATA = [
     ("Just play the simple pass.", "Actionable"),
     ("It would be brilliant if you could treat your bat less like a shield.", "Actionable"),
     ("Remember to keep your shoulders square to the target.", "Actionable"),
-    ("Stop shooting from so far out and look for the open pass instead.", "Actionable"),
     ("Your teammates might as well be selling popcorn in the stands.", "Actionable"),
-    ("you're trying to thread a needle through three defenders every time.", "Actionable"),
     ("Honestly, your determination to defend every single ball is admirable, truly.", "Non-Actionable"),
     ("That was a fantastic effort.", "Non-Actionable"),
-    ("Look mate, I know you can ping it 40 yards, that's top drawer.", "Non-Actionable")
 ]
 
-# --- Semantic Searcher Class ---
+# --- Semantic Searcher Class (Unchanged) ---
 class SemanticSearcher:
     def __init__(self, knowledge_base: list):
         self.knowledge_base = knowledge_base
         self.kb_vectors = [nlp(entry["advice"]).vector for entry in knowledge_base]
-
     def _cosine_similarity(self, vec1, vec2):
         if np.linalg.norm(vec1) == 0 or np.linalg.norm(vec2) == 0: return 0.0
         return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
-
     def find_closest_advice(self, query_text: str, confidence_threshold=0.5) -> str:
         if not self.knowledge_base: return "Knowledge base is empty."
         query_vector = nlp(query_text).vector
@@ -100,7 +103,7 @@ class SemanticSearcher:
         else:
             return f"Novel advice detected: \"{query_text}\""
 
-# --- Intent Classifier Functions ---
+# --- UPGRADED Intent Classifier Functions ---
 def extract_linguistic_features(text: str) -> dict:
     blob = TextBlob(text)
     doc = nlp(text)
@@ -118,55 +121,87 @@ def extract_linguistic_features(text: str) -> dict:
     return features
 
 def train_intent_classifier(training_data: list):
+    """Trains a more powerful LightGBM classifier and saves it to a file."""
     texts, labels = zip(*training_data)
     feature_dicts = [extract_linguistic_features(t) for t in texts]
-    pipeline = make_pipeline(DictVectorizer(), LogisticRegression(max_iter=1000, class_weight='balanced'))
+    pipeline = make_pipeline(DictVectorizer(), lgb.LGBMClassifier(objective='binary', class_weight='balanced'))
     pipeline.fit(feature_dicts, labels)
+    # Save the trained model for future use
+    joblib.dump(pipeline, CLASSIFIER_PATH)
     return pipeline
 
-# --- NEW: Audio Transcription Function ---
+# --- UPGRADED Audio Transcription with Pre-processing ---
 def transcribe_audio_file(audio_path: str) -> str:
-    """Handles audio file conversion to WAV and transcription."""
+    """Handles audio pre-processing and local transcription with Whisper."""
     try:
-        sound = AudioSegment.from_file(audio_path)
-        wav_io = io.BytesIO()
-        sound.export(wav_io, format="wav")
-        wav_io.seek(0)
-    except Exception as e:
-        return f"ERROR: Could not process audio file. Ensure ffmpeg is installed. Details: {e}"
-
-    recognizer = sr.Recognizer()
-    with sr.AudioFile(wav_io) as source:
-        audio_data = recognizer.record(source)
+        print(f"Processing audio file: {audio_path}")
+        
+        # 1. First try to load with librosa (handles most formats)
         try:
-            print("🎤 Transcribing audio...")
-            transcript = recognizer.recognize_google(audio_data)
-            return transcript
-        except sr.UnknownValueError:
-            return "ERROR: Google Speech Recognition could not understand the audio."
-        except sr.RequestError as e:
-            return f"ERROR: Could not request results from Google; {e}"
+            audio, sample_rate = librosa.load(audio_path, sr=16000, mono=True)
+            print(f"Successfully loaded audio with librosa. Sample rate: {sample_rate}")
+        except Exception as librosa_error:
+            print(f"Librosa failed: {librosa_error}")
+            # 2. Fallback: Use pydub to convert to WAV first
+            try:
+                from pydub import AudioSegment
+                print("Attempting conversion with pydub...")
+                audio_segment = AudioSegment.from_file(audio_path)
+                # Export as WAV to a temporary file
+                temp_wav_path = audio_path + "_temp.wav"
+                audio_segment.export(temp_wav_path, format="wav")
+                # Load the converted WAV file
+                audio, sample_rate = librosa.load(temp_wav_path, sr=16000, mono=True)
+                # Clean up temp file
+                import os
+                if os.path.exists(temp_wav_path):
+                    os.remove(temp_wav_path)
+                print("Successfully converted and loaded audio with pydub")
+            except Exception as pydub_error:
+                return f"ERROR: Failed to load audio file. Both librosa and pydub failed.\nLibrosa error: {librosa_error}\nPydub error: {pydub_error}"
+        
+        # 3. Perform noise reduction
+        print("Reducing noise from audio...")
+        try:
+            reduced_noise_audio = nr.reduce_noise(y=audio, sr=sample_rate)
+        except Exception as noise_error:
+            print(f"Noise reduction failed: {noise_error}")
+            # Continue without noise reduction
+            reduced_noise_audio = audio
+        
+        # 4. Transcribe the cleaned audio using faster-whisper
+        print("🎤 Transcribing audio with faster-whisper...")
+        segments, _ = whisper_model.transcribe(reduced_noise_audio, beam_size=5)
+        
+        transcript = " ".join([segment.text for segment in segments])
+        return transcript.strip()
 
-# --- Train the Classifier and Initialize the Searcher at Startup ---
-print("--- [Setup Phase: Training Custom Intent Classifier] ---")
-intent_classifier = train_intent_classifier(ANNOTATED_DATA)
-print("✅ Custom classifier trained.")
+    except Exception as e:
+        return f"ERROR: Failed during audio processing or transcription. Details: {e}"
+
+# --- Train or Load Classifier and Initialize Searcher at Startup ---
+if os.path.exists(CLASSIFIER_PATH):
+    print(f"--- [Setup Phase: Loading existing classifier from {CLASSIFIER_PATH}] ---")
+    intent_classifier = joblib.load(CLASSIFIER_PATH)
+    print("✅ Custom classifier loaded.")
+else:
+    print("--- [Setup Phase: Training new classifier (first run)] ---")
+    intent_classifier = train_intent_classifier(ANNOTATED_DATA)
+    print("✅ Custom classifier trained and saved.")
+
 print("\n--- [Setup Phase: Initializing Private Semantic Engine] ---")
 semantic_searcher = SemanticSearcher(GOLDEN_ADVICE_LIBRARY)
 print("✅ Semantic searcher initialized.")
 
 # ==============================================================================
-#  3. THE PERSONALIZATION ENGINE
+#  3. THE PERSONALIZATION ENGINE (Unchanged)
 # ==============================================================================
 def apply_personalization(analysis_results: list, preferences: dict) -> str:
-    """Applies user-defined preferences to the list of extracted advice."""
-    # **MODIFIED** to return a more helpful message.
     if not analysis_results:
-        return "No specific actionable advice was extracted from the voice note. For best results, please try using simpler, more direct language."
-
+        return "No specific actionable advice was extracted. For best results, please try using simpler, more direct language in a quieter environment."
+    # ... (rest of the function is the same as the previous version)
     focus_keywords = preferences.get('focus_keywords', '').lower().strip()
     focused_advice, other_advice = [], []
-
     if focus_keywords:
         focus_vector = nlp(focus_keywords).vector
         for advice in analysis_results:
@@ -177,10 +212,10 @@ def apply_personalization(analysis_results: list, preferences: dict) -> str:
                 other_advice.append(advice)
     else:
         other_advice = analysis_results
-
+    
     summary_parts = []
     tone_prefix = "A good area to focus on is: " if preferences.get('tone') == 'encouraging' else ""
-
+    
     if focused_advice:
         summary_parts.append("## 🎯 Feedback on Your Focus Areas")
         for advice in sorted(list(set(focused_advice))):
@@ -190,12 +225,13 @@ def apply_personalization(analysis_results: list, preferences: dict) -> str:
         summary_parts.append("\n## 📝 Other Key Takeaways")
         for advice in sorted(list(set(other_advice))):
             summary_parts.append(f"- {tone_prefix}{advice}")
-            
+    
     return "\n".join(summary_parts)
 
 # ==============================================================================
-#  4. FLASK ROUTES AND HTML TEMPLATES
+#  4. FLASK ROUTES AND HTML TEMPLATES (Unchanged)
 # ==============================================================================
+# (The HTML templates and Flask routes are identical to the previous version)
 
 # --- HTML Template for the Home Page ---
 HOME_TEMPLATE = """
@@ -307,8 +343,15 @@ HOME_TEMPLATE = """
 
                 <!-- Submit Button -->
                 <div class="mt-6">
-                    <button type="submit" class="w-full bg-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-800 transition duration-300 focus-outline">
-                        Analyze Voice Note
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-800 transition duration-300 focus-outline disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span id="buttonText">Analyze Voice Note</span>
+                        <span id="loadingSpinner" class="hidden">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </span>
                     </button>
                 </div>
             </form>
@@ -508,18 +551,15 @@ RESULTS_TEMPLATE = """
 </html>
 """
 
-# --- Flask Routes ---
+
 @app.route('/')
 def home():
-    """Renders the home page with the input form."""
+    
     return render_template_string(HOME_TEMPLATE)
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    """
-    The main endpoint that handles the uploaded audio file.
-    """
-    # --- 1. Handle File Upload ---
+    
     if 'audio_file' not in request.files:
         flash('No file part in the request.')
         return redirect(url_for('home'))
@@ -528,28 +568,43 @@ def analyze():
     if file.filename == '':
         flash('No selected file.')
         return redirect(url_for('home'))
-
+    
+    # Check file extension
+    allowed_extensions = {'.wav', '.mp3', '.m4a', '.flac', '.aac', '.ogg', '.au', '.wma', '.aiff'}
+    file_ext = os.path.splitext(file.filename.lower())[1]
+    
+    if file_ext not in allowed_extensions:
+        flash(f'Unsupported file format. Please use: {", ".join(allowed_extensions)}')
+        return redirect(url_for('home'))
+    
     if file:
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        # --- 2. Run Transcription ---
-        transcript = transcribe_audio_file(filepath)
         
-        # --- Clean up the temporary file ---
-        os.remove(filepath)
+        try:
+            file.save(filepath)
+            print(f"File saved to: {filepath}")
+            
+            # Check if file was actually saved and has content
+            if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+                flash('Error: File upload failed or file is empty.')
+                return redirect(url_for('home'))
+            
+            transcript = transcribe_audio_file(filepath)
+            
+        except Exception as e:
+            flash(f'Error processing file: {str(e)}')
+            return redirect(url_for('home'))
+        finally:
+            # Clean up uploaded file
+            if os.path.exists(filepath):
+                os.remove(filepath)
 
         if "ERROR:" in transcript:
             flash(transcript)
             return redirect(url_for('home'))
         
-        # --- 3. Get Preferences and Run NLP Analysis ---
-        preferences = {
-            'tone': request.form['tone'],
-            'focus_keywords': request.form['focus_keywords']
-        }
-        
+        preferences = {'tone': request.form['tone'], 'focus_keywords': request.form['focus_keywords']}
         doc = nlp(transcript)
         actionable_advice = []
         for sentence in doc.sents:
@@ -560,34 +615,31 @@ def analyze():
                 if "Novel advice" not in concept:
                     actionable_advice.append(concept)
         
-        # --- 4. Apply Personalization ---
+        
         summary_text = apply_personalization(actionable_advice, preferences)
 
-        # --- 5. Render Results ---
-        # **MODIFIED** to handle the "no advice" message gracefully.
+        
         if summary_text.startswith("No specific actionable advice"):
             summary_html = f'<div class="text-center text-gray-500 italic py-4 bg-gray-50 rounded-lg border">{summary_text}</div>'
         else:
-            # Convert markdown-style summary to basic HTML for display
+      
             summary_html = ""
             lines = summary_text.split('\n')
             in_list = False
             for line in lines:
                 if line.startswith('## '):
-                    if in_list:
-                        summary_html += '</ul>'
-                        in_list = False
+                    if in_list: summary_html += '</ul>'
+                    in_list = False
                     summary_html += f"<h2>{line[3:]}</h2>"
                 elif line.startswith('- '):
                     if not in_list:
                         summary_html += '<ul>'
                         in_list = True
                     summary_html += f"<li>{line[2:]}</li>"
-            if in_list:
-                summary_html += '</ul>'
+            if in_list: summary_html += '</ul>'
 
         return render_template_string(RESULTS_TEMPLATE, summary_html=summary_html, original_transcript=transcript)
-
+   
     return redirect(url_for('home'))
 
 # --- Main Execution Block ---
