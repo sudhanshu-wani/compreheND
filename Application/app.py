@@ -199,9 +199,11 @@ print("✅ Semantic searcher initialized.")
 def apply_personalization(analysis_results: list, preferences: dict) -> str:
     if not analysis_results:
         return "No specific actionable advice was extracted. For best results, please try using simpler, more direct language in a quieter environment."
-    # ... (rest of the function is the same as the previous version)
+    
     focus_keywords = preferences.get('focus_keywords', '').lower().strip()
+    response_length = preferences.get('response_length', 'medium')
     focused_advice, other_advice = [], []
+    
     if focus_keywords:
         focus_vector = nlp(focus_keywords).vector
         for advice in analysis_results:
@@ -216,15 +218,66 @@ def apply_personalization(analysis_results: list, preferences: dict) -> str:
     summary_parts = []
     tone_prefix = "A good area to focus on is: " if preferences.get('tone') == 'encouraging' else ""
     
-    if focused_advice:
-        summary_parts.append("## 🎯 Feedback on Your Focus Areas")
-        for advice in sorted(list(set(focused_advice))):
-            summary_parts.append(f"- {tone_prefix}{advice}")
+    # Apply response length formatting
+    def format_advice(advice_list, section_title):
+        if not advice_list:
+            return []
+        
+        formatted_section = [section_title]
+        unique_advice = sorted(list(set(advice_list)))
+        
+        for advice in unique_advice:
+            if response_length == 'short':
+                # Extract key action and important nouns from the advice
+                doc = nlp(advice)
+                
+                # Find the main verb
+                main_verb = ""
+                for token in doc:
+                    if token.pos_ in ['VERB', 'AUX'] and token.dep_ in ['ROOT', 'aux']:
+                        main_verb = token.text
+                        break
+                
+                # Find important nouns (subjects and objects)
+                important_nouns = []
+                for token in doc:
+                    if (token.pos_ == 'NOUN' and 
+                        token.dep_ in ['nsubj', 'dobj', 'pobj', 'compound'] and
+                        len(token.text) > 2):  # Avoid very short words
+                        important_nouns.append(token.text)
+                
+                # Create concise bullet point with verb + key nouns
+                if main_verb and important_nouns:
+                    # Take up to 2 most important nouns
+                    key_terms = important_nouns[:2]
+                    formatted_advice = f"- {tone_prefix}{main_verb.capitalize()} {', '.join(key_terms)}"
+                elif main_verb:
+                    # If no nouns found, use verb + first few meaningful words
+                    words = [word for word in advice.split() if len(word) > 3][:2]
+                    if words:
+                        formatted_advice = f"- {tone_prefix}{main_verb.capitalize()} {words[0]}"
+                    else:
+                        formatted_advice = f"- {tone_prefix}{main_verb.capitalize()}"
+                else:
+                    # Fallback: use first 3-4 meaningful words
+                    words = [word for word in advice.split() if len(word) > 2][:4]
+                    formatted_advice = f"- {tone_prefix}{' '.join(words).capitalize()}"
+                    
+            else:  # medium length
+                # Use the full advice with tone prefix
+                formatted_advice = f"- {tone_prefix}{advice}"
+            
+            formatted_section.append(formatted_advice)
+        
+        return formatted_section
     
+    # Format focused advice
+    if focused_advice:
+        summary_parts.extend(format_advice(focused_advice, "## 🎯 Feedback on Your Focus Areas"))
+    
+    # Format other advice
     if other_advice:
-        summary_parts.append("\n## 📝 Other Key Takeaways")
-        for advice in sorted(list(set(other_advice))):
-            summary_parts.append(f"- {tone_prefix}{advice}")
+        summary_parts.extend(format_advice(other_advice, "\n## 📝 Other Key Takeaways"))
     
     return "\n".join(summary_parts)
 
@@ -329,6 +382,13 @@ HOME_TEMPLATE = """
                             <option value="encouraging">Encouraging</option>
                         </select>
                     </div>
+                    <div class="mb-4">
+                        <label class="block text-blue-700 font-bold mb-2">Response Length</label>
+                        <select name="response_length" class="w-full p-2 border rounded-md bg-blue-50 focus-outline">
+                            <option value="short">Short (Concise bullet points)</option>
+                            <option value="medium">Medium (Detailed explanations)</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="focus_keywords" class="block text-blue-700 font-bold mb-2">Focus Keywords (Optional)</label>
                         <input type="text" name="focus_keywords" id="focus_keywords" placeholder="e.g., defense, footwork" class="w-full p-2 border rounded-md bg-blue-50 focus-outline">
@@ -354,7 +414,125 @@ HOME_TEMPLATE = """
                         </span>
                     </button>
                 </div>
+                <!-- Privacy Policy and Terms of Use -->
+                <div class="mt-8 pt-6 border-t border-blue-200">
+                    <p class="text-sm text-blue-700 text-center">
+                        By using this tool, you agree to our 
+                        <button id="privacyBtn" class="text-blue-800 underline hover:text-blue-900 focus-outline" type="button">Privacy Policy</button> 
+                        and 
+                        <button id="termsBtn" class="text-blue-800 underline hover:text-blue-900 focus-outline" type="button">Terms of Use</button>.
+                    </p>
+                </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-blue-800">Privacy Policy</h2>
+                    <button id="closePrivacy" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
+                </div>
+                <div class="prose text-sm">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2">Data Protection & Privacy</h3>
+                    <p class="mb-3">This application is designed with your privacy in mind and complies with GDPR and UK data protection regulations.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Data We Process:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Audio files you upload for analysis</li>
+                        <li>Transcribed text from your audio</li>
+                        <li>Your preferences (tone, focus keywords)</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">How We Use Your Data:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>To transcribe your audio using local processing</li>
+                        <li>To analyze and provide personalized coaching feedback</li>
+                        <li>To improve our service functionality</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Data Storage & Security:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Audio files are temporarily stored during processing and automatically deleted</li>
+                        <li>No personal data is permanently stored on our servers</li>
+                        <li>All processing is done locally on your device where possible</li>
+                        <li>We use industry-standard security measures to protect your data</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Your Rights (GDPR):</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Right to access your personal data</li>
+                        <li>Right to rectification of inaccurate data</li>
+                        <li>Right to erasure ("right to be forgotten")</li>
+                        <li>Right to data portability</li>
+                        <li>Right to object to processing</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Contact Information:</h4>
+                    <p class="mb-3">For privacy-related inquiries, please contact us at: privacy@comprehend-tool.com</p>
+                    
+                    <p class="text-xs text-gray-600 mt-4">Last updated: January 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Use Modal -->
+    <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-blue-800">Terms of Use</h2>
+                    <button id="closeTerms" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
+                </div>
+                <div class="prose text-sm">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2">Acceptance of Terms</h3>
+                    <p class="mb-3">By using this neurodiversity coaching tool, you agree to be bound by these Terms of Use.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Service Description:</h4>
+                    <p class="mb-3">This tool provides AI-powered analysis of coaching voice notes to generate personalized feedback for neurodiverse individuals.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">User Responsibilities:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>You must own or have permission to use any audio content you upload</li>
+                        <li>You are responsible for the accuracy and appropriateness of your content</li>
+                        <li>You must not upload malicious files or attempt to compromise the service</li>
+                        <li>You must respect intellectual property rights</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Limitations of Service:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>This tool is for educational and coaching purposes only</li>
+                        <li>Results are AI-generated and should not replace professional advice</li>
+                        <li>We do not guarantee accuracy of transcriptions or analysis</li>
+                        <li>Service availability may vary and is provided "as is"</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Intellectual Property:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>You retain ownership of your uploaded content</li>
+                        <li>Analysis results are provided for your personal use</li>
+                        <li>Our AI models and algorithms remain our intellectual property</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Liability & Disclaimers:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>We are not liable for any decisions made based on our analysis</li>
+                        <li>We do not guarantee uninterrupted service</li>
+                        <li>We are not responsible for any indirect or consequential damages</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Changes to Terms:</h4>
+                    <p class="mb-3">We reserve the right to modify these terms at any time. Continued use constitutes acceptance of updated terms.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Governing Law:</h4>
+                    <p class="mb-3">These terms are governed by UK law and subject to UK jurisdiction.</p>
+                    
+                    <p class="text-xs text-gray-600 mt-4">Last updated: January 2025</p>
+                </div>
+            </div>
         </div>
     </div>
     <script>
@@ -406,6 +584,62 @@ HOME_TEMPLATE = """
             applyPrefs();
         });
         document.addEventListener('DOMContentLoaded', applyPrefs);
+        
+        // Privacy Policy and Terms of Use Modal Functionality
+        const privacyBtn = document.getElementById('privacyBtn');
+        const termsBtn = document.getElementById('termsBtn');
+        const privacyModal = document.getElementById('privacyModal');
+        const termsModal = document.getElementById('termsModal');
+        const closePrivacy = document.getElementById('closePrivacy');
+        const closeTerms = document.getElementById('closeTerms');
+        
+        // Open Privacy Policy Modal
+        privacyBtn.addEventListener('click', () => {
+            privacyModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Open Terms of Use Modal
+        termsBtn.addEventListener('click', () => {
+            termsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Close Privacy Policy Modal
+        closePrivacy.addEventListener('click', () => {
+            privacyModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close Terms of Use Modal
+        closeTerms.addEventListener('click', () => {
+            termsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close modals when clicking outside
+        privacyModal.addEventListener('click', (e) => {
+            if (e.target === privacyModal) {
+                privacyModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        termsModal.addEventListener('click', (e) => {
+            if (e.target === termsModal) {
+                termsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                privacyModal.classList.add('hidden');
+                termsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
     </script>
 </body>
 </html>
@@ -495,8 +729,128 @@ RESULTS_TEMPLATE = """
                     Analyze New Voice Note
                 </a>
             </div>
+            
+            <!-- Privacy Policy and Terms of Use -->
+            <div class="mt-8 pt-6 border-t border-blue-200">
+                <p class="text-sm text-blue-700 text-center">
+                    By using this tool, you agree to our 
+                    <button id="privacyBtn" class="text-blue-800 underline hover:text-blue-900 focus-outline" type="button">Privacy Policy</button> 
+                    and 
+                    <button id="termsBtn" class="text-blue-800 underline hover:text-blue-900 focus-outline" type="button">Terms of Use</button>.
+                </p>
+            </div>
         </div>
     </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-blue-800">Privacy Policy</h2>
+                    <button id="closePrivacy" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
+                </div>
+                <div class="prose text-sm">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2">Data Protection & Privacy</h3>
+                    <p class="mb-3">This application is designed with your privacy in mind and complies with GDPR and UK data protection regulations.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Data We Process:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Audio files you upload for analysis</li>
+                        <li>Transcribed text from your audio</li>
+                        <li>Your preferences (tone, focus keywords)</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">How We Use Your Data:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>To transcribe your audio using local processing</li>
+                        <li>To analyze and provide personalized coaching feedback</li>
+                        <li>To improve our service functionality</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Data Storage & Security:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Audio files are temporarily stored during processing and automatically deleted</li>
+                        <li>No personal data is permanently stored on our servers</li>
+                        <li>All processing is done locally on your device where possible</li>
+                        <li>We use industry-standard security measures to protect your data</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Your Rights (GDPR):</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Right to access your personal data</li>
+                        <li>Right to rectification of inaccurate data</li>
+                        <li>Right to erasure ("right to be forgotten")</li>
+                        <li>Right to data portability</li>
+                        <li>Right to object to processing</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Contact Information:</h4>
+                    <p class="mb-3">For privacy-related inquiries, please contact us at: privacy@comprehend-tool.com</p>
+                    
+                    <p class="text-xs text-gray-600 mt-4">Last updated: January 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Use Modal -->
+    <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-blue-800">Terms of Use</h2>
+                    <button id="closeTerms" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
+                </div>
+                <div class="prose text-sm">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2">Acceptance of Terms</h3>
+                    <p class="mb-3">By using this neurodiversity coaching tool, you agree to be bound by these Terms of Use.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Service Description:</h4>
+                    <p class="mb-3">This tool provides AI-powered analysis of coaching voice notes to generate personalized feedback for neurodiverse individuals.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">User Responsibilities:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>You must own or have permission to use any audio content you upload</li>
+                        <li>You are responsible for the accuracy and appropriateness of your content</li>
+                        <li>You must not upload malicious files or attempt to compromise the service</li>
+                        <li>You must respect intellectual property rights</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Limitations of Service:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>This tool is for educational and coaching purposes only</li>
+                        <li>Results are AI-generated and should not replace professional advice</li>
+                        <li>We do not guarantee accuracy of transcriptions or analysis</li>
+                        <li>Service availability may vary and is provided "as is"</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Intellectual Property:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>You retain ownership of your uploaded content</li>
+                        <li>Analysis results are provided for your personal use</li>
+                        <li>Our AI models and algorithms remain our intellectual property</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Liability & Disclaimers:</h4>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>We are not liable for any decisions made based on our analysis</li>
+                        <li>We do not guarantee uninterrupted service</li>
+                        <li>We are not responsible for any indirect or consequential damages</li>
+                    </ul>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Changes to Terms:</h4>
+                    <p class="mb-3">We reserve the right to modify these terms at any time. Continued use constitutes acceptance of updated terms.</p>
+                    
+                    <h4 class="font-semibold text-blue-600 mb-2">Governing Law:</h4>
+                    <p class="mb-3">These terms are governed by UK law and subject to UK jurisdiction.</p>
+                    
+                    <p class="text-xs text-gray-600 mt-4">Last updated: January 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Settings panel toggle
         const settingsBtn = document.getElementById('settingsBtn');
@@ -604,7 +958,11 @@ def analyze():
             flash(transcript)
             return redirect(url_for('home'))
         
-        preferences = {'tone': request.form['tone'], 'focus_keywords': request.form['focus_keywords']}
+        preferences = {
+            'tone': request.form['tone'], 
+            'focus_keywords': request.form['focus_keywords'],
+            'response_length': request.form['response_length']
+        }
         doc = nlp(transcript)
         actionable_advice = []
         for sentence in doc.sents:
