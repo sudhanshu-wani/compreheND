@@ -66,21 +66,87 @@ print("✅ Whisper model loaded.")
 #  2. THE CORE AI PIPELINE (Upgraded Components)
 # ==============================================================================
 
-# --- The "Golden" Advice Library (Unchanged) ---
+# --- The Enhanced Golden Advice Library ---
 GOLDEN_ADVICE_LIBRARY = [
+    # Technical Skills
     {"advice": "player is unfocused and not following the game plan", "concept": "Improve tactical discipline and adhere to the team strategy."},
     {"advice": "player is holding onto the ball or possession for too long", "concept": "Increase speed of play; focus on quicker decisions and team integration."},
     {"advice": "player is making poor decisions and forcing plays that are not there", "concept": "Improve situational awareness and shot/pass selection."},
+    {"advice": "player's first touch is too heavy and losing possession", "concept": "Focus on softer ball control and cushioning the first touch."},
+    {"advice": "player is not maintaining proper defensive stance", "concept": "Keep low center of gravity and stay on balls of feet for better defensive mobility."},
+    
+    # Mental Game
+    {"advice": "player seems anxious and rushing decisions under pressure", "concept": "Practice breathing techniques and pre-performance routines to stay calm."},
+    {"advice": "player loses focus after making mistakes", "concept": "Develop resilience through positive self-talk and next-play mentality."},
+    {"advice": "player is hesitant to take initiative in key moments", "concept": "Build confidence through gradual exposure to pressure situations in practice."},
+    
+    # Team Dynamics
+    {"advice": "player is not communicating effectively with teammates", "concept": "Increase verbal communication and use clear, specific callouts."},
+    {"advice": "player is not supporting teammates in transition", "concept": "Improve off-ball movement and anticipate teammates' needs."},
+    {"advice": "player shows frustration with teammates' mistakes", "concept": "Practice empathy and constructive communication with teammates."},
+    
+    # Game Strategy
+    {"advice": "player is not recognizing defensive patterns", "concept": "Study game film and practice pattern recognition in training."},
+    {"advice": "player is not adapting to opponent's strategy", "concept": "Develop flexibility in tactical approach and read game situations better."},
+    {"advice": "player is not managing energy effectively", "concept": "Work on pacing and strategic rest during natural game breaks."},
+    
+    # Leadership
+    {"advice": "player is not taking responsibility in crucial moments", "concept": "Embrace leadership opportunities and trust in your abilities."},
+    {"advice": "player is not helping organize the team", "concept": "Take initiative in team organization and tactical adjustments."},
+    {"advice": "player shows negative body language", "concept": "Maintain positive body language to boost team morale."}
 ]
 
-# --- Annotated Dataset for the Intent Classifier (Unchanged) ---
+# --- Enhanced Annotated Dataset for the Intent Classifier ---
 ANNOTATED_DATA = [
+    # Technical Instructions (Actionable)
     ("Just play the simple pass.", "Actionable"),
-    ("It would be brilliant if you could treat your bat less like a shield.", "Actionable"),
-    ("Remember to keep your shoulders square to the target.", "Actionable"),
-    ("Your teammates might as well be selling popcorn in the stands.", "Actionable"),
-    ("Honestly, your determination to defend every single ball is admirable, truly.", "Non-Actionable"),
+    ("Keep your shoulders square to the target.", "Actionable"),
+    ("Move your feet faster to get into position.", "Actionable"),
+    ("Watch the ball all the way onto your bat.", "Actionable"),
+    ("Stay low when defending.", "Actionable"),
+    ("Follow through with your swing.", "Actionable"),
+    ("Keep your head still while making contact.", "Actionable"),
+    
+    # Mental Game Instructions (Actionable)
+    ("Take a deep breath before serving.", "Actionable"),
+    ("Focus on one point at a time.", "Actionable"),
+    ("Trust your training and stick to the basics.", "Actionable"),
+    ("Visualize your successful shots before the match.", "Actionable"),
+    
+    # Strategic Instructions (Actionable)
+    ("Look for gaps in their defense.", "Actionable"),
+    ("Change up your serve placement.", "Actionable"),
+    ("Make them play to your strengths.", "Actionable"),
+    ("Force them to their weaker side.", "Actionable"),
+    
+    # Team Communication (Actionable)
+    ("Call for the ball early and clearly.", "Actionable"),
+    ("Signal your intentions to your teammates.", "Actionable"),
+    ("Direct traffic on defense.", "Actionable"),
+    
+    # Constructive Criticism (Actionable)
+    ("Your footwork needs to be quicker.", "Actionable"),
+    ("You're dropping your elbow too early.", "Actionable"),
+    ("Your grip is too tight on the racket.", "Actionable"),
+    
+    # Praise and Observations (Non-Actionable)
     ("That was a fantastic effort.", "Non-Actionable"),
+    ("You're really improving each week.", "Non-Actionable"),
+    ("I'm impressed with your dedication.", "Non-Actionable"),
+    ("Your energy today is outstanding.", "Non-Actionable"),
+    ("You've got natural talent.", "Non-Actionable"),
+    
+    # Sarcasm/Non-Constructive (Non-Actionable)
+    ("Well, that was interesting.", "Non-Actionable"),
+    ("Your teammates might as well be selling popcorn in the stands.", "Non-Actionable"),
+    ("Honestly, your determination to defend every single ball is admirable, truly.", "Non-Actionable"),
+    ("I've seen better coordination in a nursery.", "Non-Actionable"),
+    
+    # General Comments (Non-Actionable)
+    ("The weather is affecting everyone's game today.", "Non-Actionable"),
+    ("These are tough conditions to play in.", "Non-Actionable"),
+    ("The opposition is very experienced.", "Non-Actionable"),
+    ("We've got a challenging schedule ahead.", "Non-Actionable")
 ]
 
 # --- Semantic Searcher Class (Unchanged) ---
@@ -404,9 +470,9 @@ HOME_TEMPLATE = """
                 <!-- Submit Button -->
                 <div class="mt-6">
                     <button type="submit" id="submitBtn" class="w-full bg-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-800 transition duration-300 focus-outline disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span id="buttonText">Analyze Voice Note</span>
-                        <span id="loadingSpinner" class="hidden">
-                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <span id="buttonText" class="inline-flex items-center">Analyze Voice Note</span>
+                        <span id="loadingSpinner" class="hidden inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
@@ -435,7 +501,7 @@ HOME_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Privacy Policy</h2>
                     <button id="closePrivacy" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Data Protection & Privacy</h3>
                     <p class="mb-3">This application is designed with your privacy in mind and complies with GDPR and UK data protection regulations.</p>
                     
@@ -487,7 +553,7 @@ HOME_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Terms of Use</h2>
                     <button id="closeTerms" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Acceptance of Terms</h3>
                     <p class="mb-3">By using this neurodiversity coaching tool, you agree to be bound by these Terms of Use.</p>
                     
@@ -584,6 +650,23 @@ HOME_TEMPLATE = """
             applyPrefs();
         });
         document.addEventListener('DOMContentLoaded', applyPrefs);
+        
+        // Form submission handling
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submitBtn');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        form.addEventListener('submit', (e) => {
+            // Only proceed if a file is selected
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput.files.length > 0) {
+                // Disable the button and show loading state
+                submitBtn.disabled = true;
+                buttonText.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+            }
+        });
         
         // Privacy Policy and Terms of Use Modal Functionality
         const privacyBtn = document.getElementById('privacyBtn');
@@ -750,7 +833,7 @@ RESULTS_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Privacy Policy</h2>
                     <button id="closePrivacy" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Data Protection & Privacy</h3>
                     <p class="mb-3">This application is designed with your privacy in mind and complies with GDPR and UK data protection regulations.</p>
                     
@@ -802,7 +885,7 @@ RESULTS_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Terms of Use</h2>
                     <button id="closeTerms" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Acceptance of Terms</h3>
                     <p class="mb-3">By using this neurodiversity coaching tool, you agree to be bound by these Terms of Use.</p>
                     
@@ -900,6 +983,62 @@ RESULTS_TEMPLATE = """
             applyPrefs();
         });
         document.addEventListener('DOMContentLoaded', applyPrefs);
+
+        // Privacy Policy and Terms of Use Modal Functionality
+        const privacyBtn = document.getElementById('privacyBtn');
+        const termsBtn = document.getElementById('termsBtn');
+        const privacyModal = document.getElementById('privacyModal');
+        const termsModal = document.getElementById('termsModal');
+        const closePrivacy = document.getElementById('closePrivacy');
+        const closeTerms = document.getElementById('closeTerms');
+        
+        // Open Privacy Policy Modal
+        privacyBtn.addEventListener('click', () => {
+            privacyModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Open Terms of Use Modal
+        termsBtn.addEventListener('click', () => {
+            termsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Close Privacy Policy Modal
+        closePrivacy.addEventListener('click', () => {
+            privacyModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close Terms of Use Modal
+        closeTerms.addEventListener('click', () => {
+            termsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close modals when clicking outside
+        privacyModal.addEventListener('click', (e) => {
+            if (e.target === privacyModal) {
+                privacyModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        termsModal.addEventListener('click', (e) => {
+            if (e.target === termsModal) {
+                termsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                privacyModal.classList.add('hidden');
+                termsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
     </script>
 </body>
 </html>
