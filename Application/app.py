@@ -1,24 +1,3 @@
-# # ==============================================================================
-# #  Flask Web Application: Neurodiversity-Inspired Coaching Tool (Voice Input)
-# # ==============================================================================
-# # This single file contains a complete Flask application that demonstrates the
-# # full end-to-end pipeline: Audio File Upload -> Transcription -> Analysis -> Personalization.
-# #
-# # To Run This Code:
-# # 1. Save it as a Python file (e.g., `app.py`).
-# # 2. Install the necessary libraries:
-# #    pip install Flask spacy scikit-learn numpy textblob pydub
-# # 3. Download the spaCy model:
-# #    python -m spacy download en_core_web_md
-# # 4. **IMPORTANT**: You will also need to install ffmpeg.
-# #    - On Mac (using Homebrew): brew install ffmpeg
-# #    - On Windows: Download from https://ffmpeg.org/download.html and add to your system's PATH.
-# #    - On Linux (Debian/Ubuntu): sudo apt-get install ffmpeg
-# # 5. Run the app from your terminal:
-# #    flask --app app run
-# # 6. Open your web browser and go to http://127.0.0.1:5000
-# # =======================================
-
 # --- Core Imports ---
 from flask import Flask, render_template_string, request, flash, redirect, url_for
 import spacy
