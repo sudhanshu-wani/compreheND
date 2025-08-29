@@ -2,7 +2,6 @@
 
 A Flask web application that provides personalized coaching feedback through voice input analysis using advanced NLP and audio processing techniques.
 
-The development and testing has been done on Windows 10.
 
 ## Features
 
@@ -182,5 +181,7 @@ compreheND/Application/
 This project is part of an Extended Research Project (ERP) at the University of Manchester for the degree of Masters of Science in Data Science.
 
 ## Support
+
+The development and testing has been done on Windows 10. 
 
 For issues or questions, please contact the developer at wanisudhanshu@gmail.com .
