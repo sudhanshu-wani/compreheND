@@ -66,21 +66,87 @@ print("✅ Whisper model loaded.")
 #  2. THE CORE AI PIPELINE (Upgraded Components)
 # ==============================================================================
 
-# --- The "Golden" Advice Library (Unchanged) ---
+# --- The Enhanced Golden Advice Library ---
 GOLDEN_ADVICE_LIBRARY = [
+    # Technical Skills
     {"advice": "player is unfocused and not following the game plan", "concept": "Improve tactical discipline and adhere to the team strategy."},
     {"advice": "player is holding onto the ball or possession for too long", "concept": "Increase speed of play; focus on quicker decisions and team integration."},
     {"advice": "player is making poor decisions and forcing plays that are not there", "concept": "Improve situational awareness and shot/pass selection."},
+    {"advice": "player's first touch is too heavy and losing possession", "concept": "Focus on softer ball control and cushioning the first touch."},
+    {"advice": "player is not maintaining proper defensive stance", "concept": "Keep low center of gravity and stay on balls of feet for better defensive mobility."},
+    
+    # Mental Game
+    {"advice": "player seems anxious and rushing decisions under pressure", "concept": "Practice breathing techniques and pre-performance routines to stay calm."},
+    {"advice": "player loses focus after making mistakes", "concept": "Develop resilience through positive self-talk and next-play mentality."},
+    {"advice": "player is hesitant to take initiative in key moments", "concept": "Build confidence through gradual exposure to pressure situations in practice."},
+    
+    # Team Dynamics
+    {"advice": "player is not communicating effectively with teammates", "concept": "Increase verbal communication and use clear, specific callouts."},
+    {"advice": "player is not supporting teammates in transition", "concept": "Improve off-ball movement and anticipate teammates' needs."},
+    {"advice": "player shows frustration with teammates' mistakes", "concept": "Practice empathy and constructive communication with teammates."},
+    
+    # Game Strategy
+    {"advice": "player is not recognizing defensive patterns", "concept": "Study game film and practice pattern recognition in training."},
+    {"advice": "player is not adapting to opponent's strategy", "concept": "Develop flexibility in tactical approach and read game situations better."},
+    {"advice": "player is not managing energy effectively", "concept": "Work on pacing and strategic rest during natural game breaks."},
+    
+    # Leadership
+    {"advice": "player is not taking responsibility in crucial moments", "concept": "Embrace leadership opportunities and trust in your abilities."},
+    {"advice": "player is not helping organize the team", "concept": "Take initiative in team organization and tactical adjustments."},
+    {"advice": "player shows negative body language", "concept": "Maintain positive body language to boost team morale."}
 ]
 
-# --- Annotated Dataset for the Intent Classifier (Unchanged) ---
+# --- Enhanced Annotated Dataset for the Intent Classifier ---
 ANNOTATED_DATA = [
+    # Technical Instructions (Actionable)
     ("Just play the simple pass.", "Actionable"),
-    ("It would be brilliant if you could treat your bat less like a shield.", "Actionable"),
-    ("Remember to keep your shoulders square to the target.", "Actionable"),
-    ("Your teammates might as well be selling popcorn in the stands.", "Actionable"),
-    ("Honestly, your determination to defend every single ball is admirable, truly.", "Non-Actionable"),
+    ("Keep your shoulders square to the target.", "Actionable"),
+    ("Move your feet faster to get into position.", "Actionable"),
+    ("Watch the ball all the way onto your bat.", "Actionable"),
+    ("Stay low when defending.", "Actionable"),
+    ("Follow through with your swing.", "Actionable"),
+    ("Keep your head still while making contact.", "Actionable"),
+    
+    # Mental Game Instructions (Actionable)
+    ("Take a deep breath before serving.", "Actionable"),
+    ("Focus on one point at a time.", "Actionable"),
+    ("Trust your training and stick to the basics.", "Actionable"),
+    ("Visualize your successful shots before the match.", "Actionable"),
+    
+    # Strategic Instructions (Actionable)
+    ("Look for gaps in their defense.", "Actionable"),
+    ("Change up your serve placement.", "Actionable"),
+    ("Make them play to your strengths.", "Actionable"),
+    ("Force them to their weaker side.", "Actionable"),
+    
+    # Team Communication (Actionable)
+    ("Call for the ball early and clearly.", "Actionable"),
+    ("Signal your intentions to your teammates.", "Actionable"),
+    ("Direct traffic on defense.", "Actionable"),
+    
+    # Constructive Criticism (Actionable)
+    ("Your footwork needs to be quicker.", "Actionable"),
+    ("You're dropping your elbow too early.", "Actionable"),
+    ("Your grip is too tight on the racket.", "Actionable"),
+    
+    # Praise and Observations (Non-Actionable)
     ("That was a fantastic effort.", "Non-Actionable"),
+    ("You're really improving each week.", "Non-Actionable"),
+    ("I'm impressed with your dedication.", "Non-Actionable"),
+    ("Your energy today is outstanding.", "Non-Actionable"),
+    ("You've got natural talent.", "Non-Actionable"),
+    
+    # Sarcasm/Non-Constructive (Non-Actionable)
+    ("Well, that was interesting.", "Non-Actionable"),
+    ("Your teammates might as well be selling popcorn in the stands.", "Non-Actionable"),
+    ("Honestly, your determination to defend every single ball is admirable, truly.", "Non-Actionable"),
+    ("I've seen better coordination in a nursery.", "Non-Actionable"),
+    
+    # General Comments (Non-Actionable)
+    ("The weather is affecting everyone's game today.", "Non-Actionable"),
+    ("These are tough conditions to play in.", "Non-Actionable"),
+    ("The opposition is very experienced.", "Non-Actionable"),
+    ("We've got a challenging schedule ahead.", "Non-Actionable")
 ]
 
 # --- Semantic Searcher Class (Unchanged) ---
@@ -202,6 +268,7 @@ def apply_personalization(analysis_results: list, preferences: dict) -> str:
     
     focus_keywords = preferences.get('focus_keywords', '').lower().strip()
     response_length = preferences.get('response_length', 'medium')
+    audio_cues = preferences.get('audio_cues', 'no')
     focused_advice, other_advice = [], []
     
     if focus_keywords:
@@ -389,6 +456,13 @@ HOME_TEMPLATE = """
                             <option value="medium">Medium (Detailed explanations)</option>
                         </select>
                     </div>
+                    <div class="mb-4">
+                        <label class="block text-blue-700 font-bold mb-2">Audio Cues</label>
+                        <select name="audio_cues" class="w-full p-2 border rounded-md bg-blue-50 focus-outline">
+                            <option value="no">No audio cues</option>
+                            <option value="yes">Yes, add speaker buttons for each advice</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="focus_keywords" class="block text-blue-700 font-bold mb-2">Focus Keywords (Optional)</label>
                         <input type="text" name="focus_keywords" id="focus_keywords" placeholder="e.g., defense, footwork" class="w-full p-2 border rounded-md bg-blue-50 focus-outline">
@@ -404,9 +478,9 @@ HOME_TEMPLATE = """
                 <!-- Submit Button -->
                 <div class="mt-6">
                     <button type="submit" id="submitBtn" class="w-full bg-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-800 transition duration-300 focus-outline disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span id="buttonText">Analyze Voice Note</span>
-                        <span id="loadingSpinner" class="hidden">
-                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <span id="buttonText" class="inline-flex items-center">Analyze Voice Note</span>
+                        <span id="loadingSpinner" class="hidden inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
@@ -435,7 +509,7 @@ HOME_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Privacy Policy</h2>
                     <button id="closePrivacy" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Data Protection & Privacy</h3>
                     <p class="mb-3">This application is designed with your privacy in mind and complies with GDPR and UK data protection regulations.</p>
                     
@@ -487,7 +561,7 @@ HOME_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Terms of Use</h2>
                     <button id="closeTerms" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Acceptance of Terms</h3>
                     <p class="mb-3">By using this neurodiversity coaching tool, you agree to be bound by these Terms of Use.</p>
                     
@@ -583,7 +657,28 @@ HOME_TEMPLATE = """
             localStorage.setItem('nd_fontsize', fontSizeSelect.value);
             applyPrefs();
         });
-        document.addEventListener('DOMContentLoaded', applyPrefs);
+        // Load preferences when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            applyPrefs();
+            loadAudioPreferences();
+        });
+        
+        // Form submission handling
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submitBtn');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        form.addEventListener('submit', (e) => {
+            // Only proceed if a file is selected
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput.files.length > 0) {
+                // Disable the button and show loading state
+                submitBtn.disabled = true;
+                buttonText.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+            }
+        });
         
         // Privacy Policy and Terms of Use Modal Functionality
         const privacyBtn = document.getElementById('privacyBtn');
@@ -665,6 +760,49 @@ RESULTS_TEMPLATE = """
         .prose h2 { margin-top: 1.5em; margin-bottom: 0.5em; font-size: 1.25em; font-weight: 600; color: #2563eb; }
         .prose ul { list-style-type: none; padding-left: 0; }
         .prose li { background-color: #e0f2fe; border-left: 4px solid #2563eb; padding: 0.75em 1em; margin-bottom: 0.75em; border-radius: 0.25rem; color: #1e293b; }
+        /* Speaker button styling */
+        .speaker-btn { transition: all 0.2s ease-in-out; }
+        .speaker-btn:hover { transform: scale(1.1); }
+        .speaker-btn:active { transform: scale(0.95); }
+        .speaker-btn.speaking { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        /* List item styling for audio cues */
+        .audio-cue-item { background-color: #e0f2fe; border-left: 4px solid #2563eb; padding: 0.75em 1em; margin-bottom: 0.75em; border-radius: 0.25rem; color: #1e293b; }
+        /* Range input styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-track {
+            background: #dbeafe;
+            height: 8px;
+            border-radius: 4px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #2563eb;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-track {
+            background: #dbeafe;
+            height: 8px;
+            border-radius: 4px;
+            border: none;
+        }
+        input[type="range"]::-moz-range-thumb {
+            background: #2563eb;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
         .dark-mode { background-color: #101624 !important; color: #e0e7ef !important; }
         .dark-mode .settings-panel { background: #1e293b !important; border-color: #334155 !important; }
         .dark-mode .bg-white { background-color: #1e293b !important; }
@@ -686,9 +824,29 @@ RESULTS_TEMPLATE = """
         <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 border-2 border-blue-200">
             <div class="flex items-center justify-between mb-4">
                 <h1 class="text-3xl font-bold text-blue-800">compreheND</h1>
+                <div class="flex items-center space-x-2">
+                    {% if audio_cues_enabled %}
+                    <button id="stopAudioBtn" onclick="stopAllAudio()" class="focus-outline bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded transition" title="Stop all audio playback">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 6h12v12H6z"/>
+                        </svg>
+                        Stop Audio
+                    </button>
+                    {% endif %}
                 <button id="settingsBtn" class="focus-outline bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded transition" aria-label="Open settings">⚙️ Settings</button>
+                </div>
             </div>
             <p class="text-blue-700 mb-6">Your personalized summary, based on the uploaded audio and your preferences.</p>
+            {% if audio_cues_enabled %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                    <p class="text-blue-700 text-sm"><strong>Audio Cues Enabled:</strong> Click the speaker button next to each advice item to hear it spoken aloud.</p>
+                </div>
+            </div>
+            {% endif %}
             <!-- Settings Panel -->
             <div id="settingsPanel" class="settings-panel rounded-lg p-4 mb-6 hidden" aria-label="Accessibility settings">
                 <h2 class="text-lg font-semibold mb-2 text-blue-800">Accessibility & Appearance</h2>
@@ -716,6 +874,31 @@ RESULTS_TEMPLATE = """
                         <option value="dark">Dark</option>
                     </select>
                 </div>
+                {% if audio_cues_enabled %}
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="text-md font-semibold mb-3 text-blue-800">Audio Settings</h3>
+                    <div class="mb-3">
+                        <label for="volumeControl" class="block text-blue-700 font-bold mb-1">Speech Volume</label>
+                        <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1" 
+                               class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               oninput="setSpeechVolume(this.value)">
+                        <div class="flex justify-between text-xs text-blue-600">
+                            <span>Mute</span>
+                            <span>Full</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rateControl" class="block text-blue-700 font-bold mb-1">Speech Speed</label>
+                        <input type="range" id="rateControl" min="0.5" max="2" step="0.1" value="0.9" 
+                               class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               oninput="setSpeechRate(this.value)">
+                        <div class="flex justify-between text-xs text-blue-600">
+                            <span>Slow</span>
+                            <span>Fast</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
             <div class="prose max-w-none">
                 {{ summary_html|safe }}
@@ -750,7 +933,7 @@ RESULTS_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Privacy Policy</h2>
                     <button id="closePrivacy" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Data Protection & Privacy</h3>
                     <p class="mb-3">This application is designed with your privacy in mind and complies with GDPR and UK data protection regulations.</p>
                     
@@ -802,7 +985,7 @@ RESULTS_TEMPLATE = """
                     <h2 class="text-2xl font-bold text-blue-800">Terms of Use</h2>
                     <button id="closeTerms" class="text-gray-500 hover:text-gray-700 text-2xl focus-outline">&times;</button>
                 </div>
-                <div class="prose text-sm">
+                <div class="text-sm">
                     <h3 class="text-lg font-semibold text-blue-700 mb-2">Acceptance of Terms</h3>
                     <p class="mb-3">By using this neurodiversity coaching tool, you agree to be bound by these Terms of Use.</p>
                     
@@ -899,7 +1082,206 @@ RESULTS_TEMPLATE = """
             localStorage.setItem('nd_fontsize', fontSizeSelect.value);
             applyPrefs();
         });
-        document.addEventListener('DOMContentLoaded', applyPrefs);
+        // Load preferences when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            applyPrefs();
+            loadAudioPreferences();
+        });
+
+        // Text-to-Speech functionality
+        let currentSpeech = null;
+        let speechVolume = 1.0;
+        let speechRate = 0.9;
+        
+        function speakText(buttonEl, text) {
+            // Stop any currently playing speech
+            if (window.speechSynthesis && speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            // Check if speech synthesis is supported
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = speechRate;
+                utterance.pitch = 1.0;
+                utterance.volume = speechVolume;
+                
+                // Ensure voices are loaded before speaking
+                const ensureVoices = () => new Promise(resolve => {
+                    let voices = speechSynthesis.getVoices();
+                    if (voices && voices.length) return resolve(voices);
+                    const iv = setInterval(() => {
+                        voices = speechSynthesis.getVoices();
+                        if (voices && voices.length) {
+                            clearInterval(iv);
+                            resolve(voices);
+                        }
+                    }, 50);
+                });
+                
+                ensureVoices().then(voices => {
+                    const englishVoice = voices.find(voice => 
+                        voice.lang && voice.lang.startsWith('en') && /Google|Microsoft|Apple|English/i.test(voice.name)
+                    ) || voices.find(voice => voice.lang && voice.lang.startsWith('en')) || voices[0];
+                    if (englishVoice) utterance.voice = englishVoice;
+                    
+                    utterance.onstart = function() {
+                        currentSpeech = utterance;
+                        if (buttonEl) buttonEl.classList.add('text-green-600', 'bg-green-100', 'speaking');
+                        if (buttonEl) showTooltip(buttonEl, 'Playing audio...');
+                    };
+                    
+                    utterance.onend = function() {
+                        currentSpeech = null;
+                        if (buttonEl) buttonEl.classList.remove('text-green-600', 'bg-green-100', 'speaking');
+                        if (buttonEl) showTooltip(buttonEl, 'Audio finished');
+                    };
+                    
+                    utterance.onerror = function(e) {
+                        currentSpeech = null;
+                        if (buttonEl) buttonEl.classList.remove('text-green-600', 'bg-green-100', 'speaking');
+                        console.error('Speech synthesis error:', e.error);
+                        if (buttonEl) showTooltip(buttonEl, 'Audio Stopped');
+                    };
+                    
+                    speechSynthesis.speak(utterance);
+                });
+            } else {
+                alert('Text-to-speech is not supported in your browser. Please try a modern browser like Chrome, Firefox, or Edge.');
+            }
+        }
+        
+        // Function to adjust speech volume
+        function setSpeechVolume(volume) {
+            speechVolume = Math.max(0, Math.min(1, volume));
+            localStorage.setItem('nd_speech_volume', speechVolume);
+            console.log('Speech volume set to:', speechVolume);
+        }
+        
+        // Function to adjust speech rate
+        function setSpeechRate(rate) {
+            speechRate = Math.max(0.5, Math.min(2, rate));
+            localStorage.setItem('nd_speech_rate', speechRate);
+            console.log('Speech rate set to:', speechRate);
+        }
+        
+        // Function to load audio preferences
+        function loadAudioPreferences() {
+            const savedVolume = localStorage.getItem('nd_speech_volume');
+            const savedRate = localStorage.getItem('nd_speech_rate');
+            
+            if (savedVolume !== null) {
+                speechVolume = parseFloat(savedVolume);
+                const volumeControl = document.getElementById('volumeControl');
+                if (volumeControl) volumeControl.value = speechVolume;
+            }
+            
+            if (savedRate !== null) {
+                speechRate = parseFloat(savedRate);
+                const rateControl = document.getElementById('rateControl');
+                if (rateControl) rateControl.value = speechRate;
+            }
+        }
+        
+        // Load preferences when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            applyPrefs();
+            loadAudioPreferences();
+        });
+
+        // Stop speech when navigating away or closing
+        window.addEventListener('beforeunload', function() {
+            if (window.speechSynthesis && speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+        });
+
+        // Function to stop all speech synthesis
+        function stopAllAudio() {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                currentSpeech = null;
+                // Remove speaking class from all buttons
+                document.querySelectorAll('.speaking').forEach(btn => {
+                    btn.classList.remove('text-green-600', 'bg-green-100', 'speaking');
+                });
+                console.log('All audio playback stopped.');
+            } else {
+                alert('Text-to-speech is not supported in your browser. Cannot stop audio.');
+            }
+        }
+        
+        // Function to show tooltip
+        function showTooltip(element, message) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'fixed bg-gray-800 text-white text-sm px-2 py-1 rounded z-50 pointer-events-none';
+            tooltip.textContent = message;
+            tooltip.style.left = element.getBoundingClientRect().left + 'px';
+            tooltip.style.top = (element.getBoundingClientRect().top - 30) + 'px';
+            document.body.appendChild(tooltip);
+            
+            setTimeout(() => {
+                if (tooltip.parentNode) {
+                    tooltip.parentNode.removeChild(tooltip);
+                }
+            }, 2000);
+        }
+
+        // Privacy Policy and Terms of Use Modal Functionality
+        const privacyBtn = document.getElementById('privacyBtn');
+        const termsBtn = document.getElementById('termsBtn');
+        const privacyModal = document.getElementById('privacyModal');
+        const termsModal = document.getElementById('termsModal');
+        const closePrivacy = document.getElementById('closePrivacy');
+        const closeTerms = document.getElementById('closeTerms');
+        
+        // Open Privacy Policy Modal
+        privacyBtn.addEventListener('click', () => {
+            privacyModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Open Terms of Use Modal
+        termsBtn.addEventListener('click', () => {
+            termsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Close Privacy Policy Modal
+        closePrivacy.addEventListener('click', () => {
+            privacyModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close Terms of Use Modal
+        closeTerms.addEventListener('click', () => {
+            termsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close modals when clicking outside
+        privacyModal.addEventListener('click', (e) => {
+            if (e.target === privacyModal) {
+                privacyModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        termsModal.addEventListener('click', (e) => {
+            if (e.target === termsModal) {
+                termsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                privacyModal.classList.add('hidden');
+                termsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
     </script>
 </body>
 </html>
@@ -961,7 +1343,8 @@ def analyze():
         preferences = {
             'tone': request.form['tone'], 
             'focus_keywords': request.form['focus_keywords'],
-            'response_length': request.form['response_length']
+            'response_length': request.form['response_length'],
+            'audio_cues': request.form['audio_cues']
         }
         doc = nlp(transcript)
         actionable_advice = []
@@ -993,10 +1376,18 @@ def analyze():
                     if not in_list:
                         summary_html += '<ul>'
                         in_list = True
-                    summary_html += f"<li>{line[2:]}</li>"
+                    
+                    # Extract the advice text
+                    advice_text = line[2:]
+                     
+                     # Add speaker button if audio cues are enabled
+                    if preferences.get('audio_cues') == 'yes':
+                        summary_html += f'<li class="audio-cue-item flex items-center justify-between group"><span class="flex-1">{advice_text}</span><button onclick="speakText(this, \'{advice_text.replace(chr(39), "&apos;")}\')" class="speaker-btn ml-3 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Click to hear this advice" aria-label="Listen to: {advice_text.replace(chr(39), "&apos;")}" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')speakText(this, \'{advice_text.replace(chr(39), "&apos;")}\')"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button></li>'
+                    else:
+                         summary_html += f"<li>{advice_text}</li>"
             if in_list: summary_html += '</ul>'
 
-        return render_template_string(RESULTS_TEMPLATE, summary_html=summary_html, original_transcript=transcript)
+        return render_template_string(RESULTS_TEMPLATE, summary_html=summary_html, original_transcript=transcript, audio_cues_enabled=preferences.get('audio_cues') == 'yes')
    
     return redirect(url_for('home'))
 
