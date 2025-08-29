@@ -38,6 +38,8 @@ import librosa
 import noisereduce as nr
 import soundfile as sf
 import lightgbm as lgb
+import warnings
+warnings.filterwarnings("ignore", message="X does not have valid feature names", category=UserWarning)
 
 # ==============================================================================
 #  1. INITIALIZE FLASK APP AND LOAD MODELS
