@@ -2,6 +2,8 @@
 
 A Flask web application that provides personalized coaching feedback through voice input analysis using advanced NLP and audio processing techniques.
 
+The development and testing has been done on Windows 10.
+
 ## Features
 
 - **Voice Input Processing**: Upload audio files for transcription and analysis
@@ -9,19 +11,29 @@ A Flask web application that provides personalized coaching feedback through voi
 - **Intent Classification**: Machine learning-based classification of actionable vs non-actionable advice
 - **Personalized Feedback**: Tailored coaching recommendations based on analysis
 - **Audio Enhancement**: Noise reduction and audio preprocessing capabilities
+- **Privacy-First Design**: Audio files are automatically deleted immediately after processing for enhanced privacy
 
 ## Prerequisites
 
 ### System Requirements
 - Python 3.8 or higher
-- FFmpeg (required for audio processing)
+- FFmpeg (optional but recommended for broader audio format support)
 
 ### FFmpeg Installation
 
+**Note:** FFmpeg is optional but highly recommended. The application includes fallback audio processing that works with common formats (WAV, MP3, FLAC) without FFmpeg, but installing it enables support for additional formats like M4A, AAC, OGG, and OPUS.
+
 **Windows:**
-1. Download FFmpeg from https://ffmpeg.org/download.html
-2. Extract to a folder (e.g., `C:\ffmpeg`)
-3. Add `C:\ffmpeg\bin` to your system PATH environment variable
+1. (Recommended) Install via winget:
+   ```powershell
+   winget install --id=Gyan.FFmpeg -e
+   ```
+   After installation, close and reopen the terminal so PATH updates.
+2. (Manual alternative)
+   - Download a static build from `https://www.gyan.dev/ffmpeg/builds/`
+   - Extract to a folder (e.g., `C:\ffmpeg`)
+   - Add `C:\ffmpeg\bin` to your system PATH environment variable
+   - Open a new terminal
 
 **macOS:**
 ```bash
@@ -46,6 +58,9 @@ cd compreheND/Application
 ```bash
 # Windows
 python -m venv venv
+# PowerShell
+.\venv\Scripts\Activate.ps1
+# CMD
 venv\Scripts\activate
 
 # macOS/Linux
@@ -78,9 +93,10 @@ python app.py
 Open your web browser and navigate to: `http://127.0.0.1:5000`
 
 ### 3. Using the Application
-1. Upload an audio file (WAV, MP3, M4A, etc.)
-2. Wait for processing (transcription and analysis)
-3. View personalized coaching feedback
+1. Personalize the feedback using the available preference options.
+2. Upload an audio file (WAV, MP3, M4A, etc.)
+3. Wait for processing (transcription and analysis)
+4. View personalized coaching feedback
 
 ## Project Structure
 
@@ -89,7 +105,7 @@ compreheND/Application/
 ├── app.py                 # Main Flask application
 ├── requirements.txt       # Python dependencies
 ├── README.md             # This file
-├── uploads/              # Directory for uploaded audio files
+├── uploads/              # Directory for uploaded audio files (created during setup)
 └── venv/                 # Virtual environment (created during setup)
 ```
 
@@ -117,8 +133,12 @@ compreheND/Application/
 
 ### Common Issues
 
-1. **FFmpeg not found**: Ensure FFmpeg is installed and added to PATH
-2. **spaCy model not found**: Run `python -m spacy download en_core_web_md`
+1. **FFmpeg not found**: FFmpeg is optional but recommended for broader audio format support. The app works with common formats without it, but some formats may fail to process.
+2. **spaCy model not found (OSError: [E050])**:
+   - Activate your virtual environment
+   - Run: `python -m spacy download en_core_web_md`
+   - Verify: `python -c "import spacy; spacy.load('en_core_web_md'); print('OK')"`
+   - If still failing, ensure you are installing and running within the same venv
 3. **Audio processing errors**: Check that audio files are in supported formats
 4. **M4A file errors**: 
    - Ensure FFmpeg is properly installed
@@ -144,10 +164,23 @@ compreheND/Application/
 - Adjust `ANNOTATED_DATA` to improve intent classification
 - Customize personalization logic in `apply_personalization()`
 
+## Privacy & Data Security
+
+### Audio File Handling
+- **Automatic Deletion**: All uploaded audio files are automatically deleted immediately after processing is complete
+- **No Permanent Storage**: Audio files are never permanently stored on the system
+- **Local Processing**: All audio transcription and analysis is performed locally on your device
+- **GDPR Compliant**: The application follows privacy-by-design principles
+
+### Data Processing
+- Only the transcribed text and your preferences are used for analysis
+- No personal audio data is transmitted to external servers
+- All processing occurs within the local Flask application
+
 ## License
 
-This project is part of an Extended Research Project (ERP) at the University of Manchester.
+This project is part of an Extended Research Project (ERP) at the University of Manchester for the degree of Masters of Science in Data Science.
 
 ## Support
 
-For issues or questions, please refer to the project documentation or contact the development team. 
+For issues or questions, please contact the developer at wanisudhanshu@gmail.com .
