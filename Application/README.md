@@ -49,7 +49,7 @@ sudo apt-get install ffmpeg
 
 ### 1. Clone or Download the Project
 ```bash
-git clone <repository-url>
+git clone https://github.com/sudhanshu-wani/compreheND.git 
 cd compreheND/Application
 ```
 
