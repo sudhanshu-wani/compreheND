@@ -3,7 +3,9 @@
 A Flask web application that provides personalized coaching feedback through voice input analysis using advanced NLP and audio processing techniques.
 
 ## 📋 Table of Contents
-
+<details>
+<summary>Click to expand/collapse Table of Contents</summary>
+  
 - [Features](#features)
 - [Prerequisites](#prerequisites)
   - [System Requirements](#system-requirements)
@@ -39,6 +41,8 @@ A Flask web application that provides personalized coaching feedback through voi
 - [License](#license)
 - [Support](#support)
 
+</details>
+
 ---
 
 ## Features
@@ -53,12 +57,12 @@ A Flask web application that provides personalized coaching feedback through voi
 ## Prerequisites
 
 ### System Requirements
-- Python 3.8 or higher
-- FFmpeg (optional but recommended for broader audio format support)
+- Python 3.9 or higher (Python 3.10 recommended)
+- FFmpeg (optional for broader audio format support)
 
 ### FFmpeg Installation
 
-**Note:** FFmpeg is optional but highly recommended. The application includes fallback audio processing that works with common formats (WAV, MP3, FLAC) without FFmpeg, but installing it enables support for additional formats like M4A, AAC, OGG, and OPUS.
+**Note:** FFmpeg is optional. The application includes fallback audio processing that works with common formats (WAV, MP3, FLAC) without FFmpeg, but installing it enables support for additional formats like M4A, AAC, OGG, and OPUS.
 
 **Windows:**
 1. (Recommended) Install via winget:
@@ -116,7 +120,6 @@ cd compreheND/Application
 ### 5. Install other Python dependencies via pip
 
 ```bash
-conda install pip
 pip install -r requirements.txt
 ```
 
@@ -215,16 +218,16 @@ OSError: dlopen(...lib_lightgbm.dylib): Library not loaded: @rpath/libomp.dylib
 
 Occurs because OpenMP runtime is missing.
 
-**Fix:** Install LightGBM via conda-forge which bundles OpenMP properly:
-
-```bash
-conda install -c conda-forge lightgbm
-```
-
 If you installed LightGBM through pip earlier, uninstall it first:
 
 ```bash
 pip uninstall lightgbm
+```
+
+**Fix:** Install LightGBM via conda-forge which bundles OpenMP properly:
+
+```bash
+conda install -c conda-forge lightgbm
 ```
 
 ---
@@ -323,6 +326,8 @@ Part of an Extended Research Project (ERP) at the University of Manchester for M
 
 Developed & tested on Windows 10 and macOS using Conda environments.
 
-Contact: wanisudhanshu@gmail.com
+For questions or assistance, please contact me at: wanisudhanshu@gmail.com
+
+Contributions and feedback are welcome! If you'd like to suggest improvements or report bugs, please open an issue or submit a pull request.
 
 ---
