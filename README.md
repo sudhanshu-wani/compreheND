@@ -116,10 +116,10 @@ cd compreheND/Application
 ### 5. Install other Python dependencies via pip
 
 ```bash
+conda install pip
 pip install -r requirements.txt
 ```
 
-> **Note:** If `lightgbm` is in `requirements.txt`, remove it to avoid conflicts with the conda-installed version.
 
 ### 6. Download spaCy language model
 
