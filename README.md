@@ -2,6 +2,44 @@
 
 A Flask web application that provides personalized coaching feedback through voice input analysis using advanced NLP and audio processing techniques.
 
+## 📋 Table of Contents
+
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+  - [System Requirements](#system-requirements)
+  - [FFmpeg Installation](#ffmpeg-installation)
+- [Installation](#installation)
+  - [1. Install Anaconda or Miniconda](#1-install-anaconda-or-miniconda)
+  - [2. Create and activate a new Conda environment](#2-create-and-activate-a-new-conda-environment)
+  - [3. Install pip and LightGBM via conda-forge](#3-install-pip-and-lightgbm-via-conda-forge)
+  - [4. Clone the repository and navigate into it](#4-clone-the-repository-and-navigate-into-it)
+  - [5. Install other Python dependencies via pip](#5-install-other-python-dependencies-via-pip)
+  - [6. Download spaCy language model](#6-download-spacy-language-model)
+  - [7. (Optional) Install FFmpeg via conda-forge for extended audio format support](#7-optional-install-ffmpeg-via-conda-forge-for-extended-audio-format-support)
+- [Usage](#usage)
+  - [1. Start the application](#1-start-the-application)
+  - [2. Access the application](#2-access-the-application)
+  - [3. Using the application](#3-using-the-application)
+- [Project Structure](#project-structure)
+- [Dependencies](#dependencies)
+  - [Core](#core)
+  - [Audio Processing](#audio-processing)
+  - [Machine Learning](#machine-learning)
+- [Troubleshooting](#troubleshooting)
+  - [LightGBM Import Error on macOS/Linux/Windows](#lightgbm-import-error-on-macoslinuxwindows)
+  - [FFmpeg Not Found Warning](#ffmpeg-not-found-warning)
+  - [spaCy Model Not Found](#spacy-model-not-found)
+  - [Audio Format or Processing Errors](#audio-format-or-processing-errors)
+  - [Memory Issues](#memory-issues)
+- [Performance Optimization](#performance-optimization)
+- [Development](#development)
+  - [Adding Features](#adding-features)
+  - [Customization](#customization)
+- [Privacy & Data Security](#privacy--data-security)
+- [License](#license)
+- [Support](#support)
+
+---
 
 ## Features
 
@@ -47,147 +85,85 @@ sudo apt-get install ffmpeg
 
 ## Installation
 
-### 1. Clone or Download the Project
+To minimize dependency issues (especially on macOS and Linux), the recommended setup uses Conda:
+
+### 1. Install Anaconda or Miniconda
+
+- Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/products/distribution)
+
+### 2. Create and activate a new Conda environment
+
 ```bash
-git clone https://github.com/sudhanshu-wani/compreheND.git 
+conda create --name compreheND_env python=3.8 -y
+conda activate compreheND_env
+```
+
+### 3. Install pip and LightGBM via conda-forge
+
+This ensures proper handling of native dependencies like OpenMP for LightGBM.
+
+```bash
+conda install -c conda-forge pip lightgbm
+```
+
+### 4. Clone the repository and navigate into it
+
+```bash
+git clone https://github.com/sudhanshu-wani/compreheND.git
 cd compreheND/Application
 ```
 
-### 2. Create Virtual Environment
-```bash
-# Windows
-python -m venv venv
-# PowerShell
-.\venv\Scripts\Activate.ps1
-# CMD
-venv\Scripts\activate
+### 5. Install other Python dependencies via pip
 
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Download spaCy Model
+> **Note:** If `lightgbm` is in `requirements.txt`, remove it to avoid conflicts with the conda-installed version.
+
+### 6. Download spaCy language model
+
 ```bash
 python -m spacy download en_core_web_md
 ```
 
+### 7. (Optional) Install FFmpeg via conda-forge for extended audio format support
+
+```bash
+conda install -c conda-forge ffmpeg
+```
+
+FFmpeg is optional if only common audio formats (WAV, MP3, FLAC) are used.
+
+---
+
 ## Usage
 
-### 1. Start the Application
+### 1. Start the application
+
 ```bash
-# Method 1: Using Flask CLI
+# Using Flask CLI
 flask --app app run
 
-# Method 2: Direct Python execution
+# Or direct Python execution
 python app.py
 ```
 
-### 2. Access the Application
-Open your web browser and navigate to: `http://127.0.0.1:5000`
+### 2. Access the application
 
-### 3. Using the Application
-1. Personalize the feedback using the available preference options.
+Open your browser at: `http://127.0.0.1:5000`
+
+### 3. Using the application
+
+1. Personalize feedback via available preference options
 2. Upload an audio file (WAV, MP3, M4A, etc.)
-3. Wait for processing (transcription and analysis)
+3. Wait for transcription and analysis
 4. View personalized coaching feedback
 
-You can use the trial audio samples provided in the `compreheND/samples/` directory to quickly test and replicate results.
+Trial audio samples in `compreheND/samples/` help you test.
+
+---
 
 ## Project Structure
 
 ```
-compreheND/
-├── README.md                      # Project documentation (this file)
-├── samples/                       # Trial audio notes used for testing & replication 
-└── Application/
-    ├── app.py                     # Main Flask application
-    ├── requirements.txt           # Python dependencies
-    ├── test_audio.py              # Utility to test audio loading/conversion
-    ├── intent_classifier.pkl      # Trained classifier (auto-created on first run)
-    ├── uploads/                   # Temporary uploaded files (created at runtime; auto-deleted after processing)
-    └── venv/                      # Local virtual environment (developer machine)
-```
-
-## Dependencies
-
-### Core Dependencies
-- **Flask**: Web framework
-- **spaCy**: Natural language processing
-- **scikit-learn**: Machine learning utilities
-- **numpy**: Numerical computing
-- **textblob**: Text processing and sentiment analysis
-
-### Audio Processing
-- **faster-whisper**: Speech-to-text transcription
-- **librosa**: Audio analysis
-- **noisereduce**: Audio noise reduction
-- **soundfile**: Audio file I/O
-- **pydub**: Audio manipulation
-
-### Machine Learning
-- **lightgbm**: Gradient boosting framework
-- **joblib**: Model persistence
-
-## Troubleshooting
-
-### Common Issues
-
-1. **FFmpeg not found**: FFmpeg is optional but recommended for broader audio format support. The app works with common formats without it, but some formats may fail to process.
-2. **spaCy model not found (OSError: [E050])**:
-   - Activate your virtual environment
-   - Run: `python -m spacy download en_core_web_md`
-   - Verify: `python -c "import spacy; spacy.load('en_core_web_md'); print('OK')"`
-   - If still failing, ensure you are installing and running within the same venv
-3. **Audio processing errors**: Check that audio files are in supported formats
-4. **M4A file errors**: 
-   - Ensure FFmpeg is properly installed
-   - Try converting M4A to WAV first using: `ffmpeg -i input.m4a output.wav`
-   - Use the test script: `python test_audio.py your_file.m4a`
-5. **Memory issues**: The application uses CPU for Whisper model; consider using smaller models for low-end systems
-
-### Performance Optimization
-
-- For low-end systems, the application uses the "tiny.en" Whisper model
-- Audio files are processed in chunks to manage memory usage
-- Consider using GPU acceleration if available (modify WhisperModel device parameter)
-
-## Development
-
-### Adding New Features
-1. The application is modular and well-commented
-2. Core functions are separated for easy modification
-3. Machine learning models can be retrained with new data
-
-### Customization
-- Modify `GOLDEN_ADVICE_LIBRARY` for different coaching domains
-- Adjust `ANNOTATED_DATA` to improve intent classification
-- Customize personalization logic in `apply_personalization()`
-
-## Privacy & Data Security
-
-### Audio File Handling
-- **Automatic Deletion**: All uploaded audio files are automatically deleted immediately after processing is complete
-- **No Permanent Storage**: Audio files are never permanently stored on the system
-- **Local Processing**: All audio transcription and analysis is performed locally on your device
-- **GDPR Compliant**: The application follows privacy-by-design principles
-
-### Data Processing
-- Only the transcribed text and your preferences are used for analysis
-- No personal audio data is transmitted to external servers
-- All processing occurs within the local Flask application
-
-## License
-
-This project is part of an Extended Research Project (ERP) at the University of Manchester for the degree of Masters of Science in Data Science.
-
-## Support
-
-The development and testing has been done on Windows 10. 
-
-For issues or questions, please contact the developer at wanisudhanshu@gmail.com .
