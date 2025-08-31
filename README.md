@@ -94,7 +94,7 @@ To minimize dependency issues (especially on macOS and Linux), the recommended s
 ### 2. Create and activate a new Conda environment
 
 ```bash
-conda create --name compreheND_env python=3.8 -y
+conda create --name compreheND_env python=3.10 -y
 conda activate compreheND_env
 ```
 
