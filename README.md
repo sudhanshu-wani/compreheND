@@ -167,3 +167,163 @@ Trial audio samples in `compreheND/samples/` help you test.
 ## Project Structure
 
 ```
+compreheND/
+├── README.md                      # Project documentation (this file)
+├── samples/                       # Trial audio notes for testing & replication 
+└── Application/
+    ├── app.py                    # Main Flask application
+    ├── requirements.txt          # Python dependencies
+    ├── test_audio.py             # Utility to test audio loading/conversion
+    └── intent_classifier.pkl     # Trained classifier (auto-created on first run)
+   
+```
+
+---
+
+## Dependencies
+
+### Core
+
+- Flask: Web framework
+- spaCy: Natural language processing
+- scikit-learn: Machine learning utilities
+- numpy: Numerical computing
+- textblob: Text processing & sentiment analysis
+
+### Audio Processing
+
+- faster-whisper: Speech-to-text transcription
+- librosa: Audio analysis
+- noisereduce: Noise reduction
+- soundfile: Audio I/O
+- pydub: Audio manipulation
+
+### Machine Learning
+
+- lightgbm: Gradient boosting framework (conda-forge recommended)
+- joblib: Model persistence
+
+---
+
+## Troubleshooting
+
+### LightGBM Import Error on macOS/Linux/Windows
+
+```
+OSError: dlopen(...lib_lightgbm.dylib): Library not loaded: @rpath/libomp.dylib
+```
+
+Occurs because OpenMP runtime is missing.
+
+**Fix:** Install LightGBM via conda-forge which bundles OpenMP properly:
+
+```bash
+conda install -c conda-forge lightgbm
+```
+
+If you installed LightGBM through pip earlier, uninstall it first:
+
+```bash
+pip uninstall lightgbm
+```
+
+---
+
+### FFmpeg Not Found Warning
+
+Pydub needs FFmpeg to support certain audio formats.
+
+**Fix:** Install FFmpeg optionally via conda:
+
+```bash
+conda install -c conda-forge ffmpeg
+```
+
+If FFmpeg is installed but not detected, explicitly set its path in code:
+
+```python
+from pydub.utils import which
+AudioSegment.converter = which("ffmpeg")
+```
+
+---
+
+### spaCy Model Not Found
+
+Ensure spaCy model is installed in active environment:
+
+```bash
+python -m spacy download en_core_web_md
+```
+
+Verify installation:
+
+```bash
+python -c "import spacy; spacy.load('en_core_web_md'); print('OK')"
+```
+
+---
+
+### Audio Format or Processing Errors
+
+Check audio formats; you might need FFmpeg to convert unsupported ones:
+
+```bash
+ffmpeg -i input.m4a output.wav
+```
+
+---
+
+### Memory Issues
+
+Use smaller Whisper models for machines with limited resources.
+
+---
+
+## Performance Optimization
+
+- Use "tiny.en" Whisper model for low-end environments
+- Audio processing in chunks to reduce memory usage
+- Enable GPU acceleration if available by adjusting model config
+
+---
+
+## Development
+
+### Adding Features
+
+- Modular, well-commented code
+- Core functions separated for easy updates
+- Retrain ML models with new data as needed
+
+### Customization
+
+- Modify `GOLDEN_ADVICE_LIBRARY` for other coaching domains
+- Adjust `ANNOTATED_DATA` for intent classification improvements
+- Update personalization logic in `apply_personalization()`
+
+---
+
+## Privacy & Data Security
+
+- Audio files auto-deleted immediately after processing
+- No permanent audio storage
+- Local processing only, no external transmission of audio
+- Complies with GDPR and privacy-by-design principles
+
+---
+
+## License
+
+Part of an Extended Research Project (ERP) at the University of Manchester for MSc Data Science.
+
+---
+
+## Support
+
+Developed & tested on Windows 10 and macOS using Conda environments.
+
+Contact: wanisudhanshu@gmail.com
+
+
+```
